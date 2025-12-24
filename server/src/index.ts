@@ -7,6 +7,9 @@ import dotenv from 'dotenv';
 import { serverRoutes } from './routes/server.js';
 import { logsRoutes } from './routes/logs.js';
 import { playersRoutes } from './routes/players.js';
+import { propertiesRoutes } from './routes/properties.js';
+import { backupRoutes } from './routes/backup.js';
+import { resourcesRoutes } from './routes/resources.js';
 import { authMiddleware } from './utils/auth.js';
 import { setupLogStreaming } from './services/logStreamer.js';
 
@@ -32,6 +35,9 @@ app.use('/api', authMiddleware);
 app.use('/api/server', serverRoutes);
 app.use('/api/logs', logsRoutes);
 app.use('/api/players', playersRoutes);
+app.use('/api/properties', propertiesRoutes);
+app.use('/api/backup', backupRoutes);
+app.use('/api/resources', resourcesRoutes);
 
 // Health check (no auth required)
 app.get('/health', (_req, res) => {

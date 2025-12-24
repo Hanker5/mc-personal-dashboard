@@ -1,6 +1,8 @@
 import { useServerStatus } from '../hooks/useServerStatus';
 import StatusBadge from '../components/StatusBadge';
 import ServerControls from '../components/ServerControls';
+import ConsoleInput from '../components/ConsoleInput';
+import ResourceMonitor from '../components/ResourceMonitor';
 
 export default function Dashboard() {
   const { status, loading, error, refetch } = useServerStatus();
@@ -53,6 +55,10 @@ export default function Dashboard() {
         </div>
         <ServerControls status={status.status} onAction={refetch} />
       </div>
+
+      {status.status === 'running' && <ConsoleInput />}
+
+      <ResourceMonitor />
 
       <div className="grid grid-cols-2 gap-4">
         <div className="card text-center">

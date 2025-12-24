@@ -3,6 +3,8 @@ import { useAuth } from './hooks/useAuth';
 import Dashboard from './pages/Dashboard';
 import Logs from './pages/Logs';
 import Players from './pages/Players';
+import Settings from './pages/Settings';
+import Backups from './pages/Backups';
 import Login from './pages/Login';
 import Layout from './components/Layout';
 
@@ -19,6 +21,8 @@ function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/logs" element={<Logs />} />
         <Route path="/players" element={<Players />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/backups" element={<Backups />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
