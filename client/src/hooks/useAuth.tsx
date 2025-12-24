@@ -5,7 +5,7 @@ interface AuthContextType {
   credentials: string | null;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
-  getAuthHeader: () => { Authorization: string } | Record<string, never>;
+  getAuthHeader: () => Record<string, string>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('mc-dashboard-auth');
   }, []);
 
-  const getAuthHeader = useCallback(() => {
+  const getAuthHeader = useCallback((): Record<string, string> => {
     if (credentials) {
       return { Authorization: `Basic ${credentials}` };
     }
