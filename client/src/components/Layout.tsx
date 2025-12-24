@@ -23,11 +23,12 @@ export default function Layout({ children }: LayoutProps) {
       <main className="flex-1 container mx-auto px-4 py-6">{children}</main>
 
       <nav className="bg-gray-800 border-t border-gray-700 sticky bottom-0">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-around py-2">
+        <div className="container mx-auto px-4 overflow-x-auto">
+          <div className="flex justify-around py-2 min-w-max">
             <NavItem to="/" label="Home" icon="⚡" />
             <NavItem to="/logs" label="Logs" icon="📜" />
             <NavItem to="/players" label="Players" icon="👥" />
+            <NavItem to="/mods" label="Mods" icon="🧩" />
             <NavItem to="/backups" label="Backups" icon="💾" />
             <NavItem to="/settings" label="Settings" icon="⚙️" />
           </div>

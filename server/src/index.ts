@@ -10,6 +10,7 @@ import { playersRoutes } from './routes/players.js';
 import { propertiesRoutes } from './routes/properties.js';
 import { backupRoutes } from './routes/backup.js';
 import { resourcesRoutes } from './routes/resources.js';
+import { modsRoutes } from './routes/mods.js';
 import { authMiddleware } from './utils/auth.js';
 import { setupLogStreaming } from './services/logStreamer.js';
 
@@ -38,6 +39,7 @@ app.use('/api/players', playersRoutes);
 app.use('/api/properties', propertiesRoutes);
 app.use('/api/backup', backupRoutes);
 app.use('/api/resources', resourcesRoutes);
+app.use('/api/mods', modsRoutes);
 
 // Health check (no auth required)
 app.get('/health', (_req, res) => {

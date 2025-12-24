@@ -46,39 +46,113 @@ export function setupLogStreaming(io: Server): void {
 
 interface ParsedLogLine {
   timestamp: string;
-  type: 'info' | 'warn' | 'error' | 'chat' | 'player';
+  type: 'info' | 'warn' | 'error' | 'chat' | 'player' | 'mod' | 'mixin' | 'debug';
   message: string;
+  source?: string;
   raw: string;
 }
 
 function parseLogLine(line: string): ParsedLogLine {
-  // Minecraft log format: [HH:MM:SS] [Thread/LEVEL]: Message
-  const match = line.match(/^\[(\d{2}:\d{2}:\d{2})\] \[([^\]]+)\/(\w+)\]: (.+)$/);
+  const today = new Date().toISOString().split('T')[0];
 
-  if (!match) {
+  // Vanilla/Fabric format: [HH:MM:SS] [Thread/LEVEL]: Message
+  // or with mod source: [HH:MM:SS] [Thread/LEVEL] [ModId]: Message
+  const vanillaMatch = line.match(/^\[(\d{2}:\d{2}:\d{2})\] \[([^\]]+)\/(\w+)\](?:\s*\[([^\]]+)\])?: (.+)$/);
+
+  if (vanillaMatch) {
+    const [, time, thread, level, source, message] = vanillaMatch;
+    return {
+      timestamp: `${today}T${time}`,
+      type: categorizeLogLine(level, message, thread, source),
+      message,
+      source: source || extractSourceFromThread(thread),
+      raw: line,
+    };
+  }
+
+  // Fabric loader format: [HH:MM:SS] [LEVEL] (Source) Message
+  const fabricMatch = line.match(/^\[(\d{2}:\d{2}:\d{2})\] \[(\w+)\]\s*(?:\(([^)]+)\))?\s*(.+)$/);
+
+  if (fabricMatch) {
+    const [, time, level, source, message] = fabricMatch;
+    return {
+      timestamp: `${today}T${time}`,
+      type: categorizeLogLine(level, message, undefined, source),
+      message,
+      source,
+      raw: line,
+    };
+  }
+
+  // Mixin format: [mixin] ...
+  if (line.includes('[mixin]') || line.toLowerCase().includes('mixin')) {
     return {
       timestamp: new Date().toISOString(),
-      type: 'info',
+      type: 'mixin',
+      message: line,
+      source: 'mixin',
+      raw: line,
+    };
+  }
+
+  // Stack trace or continuation line
+  if (line.startsWith('\t') || line.startsWith('    ') || line.match(/^\s*at /)) {
+    return {
+      timestamp: new Date().toISOString(),
+      type: 'error',
       message: line,
       raw: line,
     };
   }
 
-  const [, time, , level, message] = match;
-  const today = new Date().toISOString().split('T')[0];
-
-  let type: ParsedLogLine['type'] = 'info';
-  if (level === 'WARN') type = 'warn';
-  else if (level === 'ERROR') type = 'error';
-  else if (message.startsWith('<')) type = 'chat';
-  else if (message.includes('joined the game') || message.includes('left the game')) {
-    type = 'player';
-  }
-
+  // Fallback
   return {
-    timestamp: `${today}T${time}`,
-    type,
-    message,
+    timestamp: new Date().toISOString(),
+    type: 'info',
+    message: line,
     raw: line,
   };
+}
+
+function categorizeLogLine(
+  level: string,
+  message: string,
+  thread?: string,
+  source?: string
+): ParsedLogLine['type'] {
+  // Check level first
+  const upperLevel = level.toUpperCase();
+  if (upperLevel === 'ERROR' || upperLevel === 'FATAL') return 'error';
+  if (upperLevel === 'WARN' || upperLevel === 'WARNING') return 'warn';
+  if (upperLevel === 'DEBUG' || upperLevel === 'TRACE') return 'debug';
+
+  // Check message content
+  if (message.startsWith('<') && message.includes('>')) return 'chat';
+  if (message.includes('joined the game') || message.includes('left the game')) return 'player';
+  if (message.includes('logged in with') || message.includes('lost connection')) return 'player';
+
+  // Check for mod-related messages
+  if (source && source !== 'minecraft' && source !== 'Minecraft') return 'mod';
+  if (thread?.includes('Mod') || message.includes('Loading mod')) return 'mod';
+
+  // Mixin detection
+  if (source?.toLowerCase().includes('mixin') || message.toLowerCase().includes('mixin')) {
+    return 'mixin';
+  }
+
+  return 'info';
+}
+
+function extractSourceFromThread(thread: string): string | undefined {
+  // Extract mod name from thread names like "fabric-lifecycle-events-v1" or "ModName Worker"
+  if (thread.includes('/')) {
+    return undefined; // Standard thread like "Server thread/INFO"
+  }
+
+  // Check for common Fabric API threads
+  if (thread.startsWith('fabric-')) {
+    return thread;
+  }
+
+  return undefined;
 }
